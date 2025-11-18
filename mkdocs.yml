@@ -1,0 +1,27 @@
+site_name: Cryptopal Rust Tutorial
+theme:
+  name: readthedocs
+  features:
+    - navigation.expand
+    - content.code.copy
+    - toc.integrate
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: installation.md
+      - Running Challenges: running.md
+  - Challenges:
+      - Set 1: set1.md
+      - Set 2: set2.md
+      - Set 3: set3.md
+      - Set 4: set4.md
+      - Set 5: set5.md
+      - Set 6: set6.md
+  - API: api.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc
+  - tables
