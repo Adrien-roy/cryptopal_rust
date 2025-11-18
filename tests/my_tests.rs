@@ -1,15 +1,15 @@
+#![allow(non_snake_case)]
 use cryptopal_chalenge::*; 
-use rand::Rng;
 use std::panic::{catch_unwind, set_hook};
 use std::collections::HashMap;
 use urlencoding::encode;
-use std::time::{UNIX_EPOCH,SystemTime,Duration};
+use std::time::{UNIX_EPOCH,SystemTime};
 use crate::rng::Mt19937;
 
 use sha1::Sha1;
 
 use num_bigint::{BigUint, RandBigInt, ToBigUint,ToBigInt};
-use num_traits::{Zero, One,Signed,ToBytes};
+use num_traits::{Zero,Signed,ToBytes};
 use rand::thread_rng;
 // format 1 string hexadecimal  vec<u8> use as.byte() to get hexadecimal 
 // format 2 string base 64v string_to_base64()
@@ -76,12 +76,6 @@ fn set_1_challenge_03(){
 }
 
 
-fn set_1_challenge_04(){//not interesting
-
-//not interesting
-
-}
-
 
 #[test]
 
@@ -119,7 +113,7 @@ fn set_1_challenge_06(){
 let expected_result =  read_file_to_string("criptopal_result_6.txt");
 let base64_file = read_file_to_string("criptopal_challenge_6.txt");
 let file = convert_hexa_to_vec(&convert_base64_to_hexstring(&base64_file));
-let solved = Vigenere(&file,29);
+let solved = vigenere(&file,29);
 let result = vec_to_ascii(&solved);
 assert_eq!(result,expected_result)
 }
@@ -141,9 +135,8 @@ let decrypted = aes_ecb_decrypt(key, &file);
 assert_eq!(results,String::from_utf8_lossy(&remove_padding(&decrypted)));
 
 }
-
-fn set_1_challenge_08(){//not running as test because that would make no sense 
-
+#[allow(dead_code)]
+fn set_1_challenge_08(){//not running as test because it is used for manual review
     let lines = read_file_lines("criptopal_challenge_8.txt");
     let mut vec_lines:Vec<Vec<u8>>= vec![];
     let mut groups: Vec<Vec<u8>> = vec![Vec::new(); 20]; //nb of 16 bit block per line
@@ -195,7 +188,7 @@ fn set_1_challenge_08(){//not running as test because that would make no sense
 
 #[test]
 
-fn ECB_check(){
+fn ecb_check(){
 
     let key ="YELLOW SUBMARINE";
     let plaintext="
@@ -233,7 +226,7 @@ fn set_2_challenge_09(){
 
 
 #[test]
-fn CBC_check(){
+fn cbc_check(){
 
 let key = "YELLOW SUBMARINE";
 let text = "We all live in a yellow submarine
@@ -246,14 +239,14 @@ let iv = vec![0u8; 16];
 let key_vec = ascii_to_vec(&key);
 let text_vec = ascii_to_vec(&text);
 
-let encripted = CBC_encrypt(&key_vec,&text_vec,&iv);
+let encripted = cbc_encrypt(&key_vec,&text_vec,&iv);
 
-let original = remove_padding(&CBC_decrypt(&key_vec,&encripted,&iv));
+let original = remove_padding(&cbc_decrypt(&key_vec,&encripted,&iv));
 
 assert_eq!(text ,vec_to_ascii(&original));
 }
 
-
+#[test]
 fn set_2_challenge_10(){
 
 
@@ -264,13 +257,14 @@ fn set_2_challenge_10(){
     let file_vec = convert_hexa_to_vec(&convert_base64_to_hexstring(&file_str));
     let iv = vec![0u8; 16];
 
-    let result =remove_padding(&CBC_decrypt(&key_vec,&file_vec,&iv));
+    let result =remove_padding(&cbc_decrypt(&key_vec,&file_vec,&iv));
     let stringoutput = vec_to_ascii(&result);
     let results = read_file_to_string("criptopal_result_7.txt");
     assert_eq!(results,stringoutput)//this is not an error the result is the same than for challenge 7
 }
 
 // not a test this would make no sense 
+#[allow(dead_code)]
 fn set_2_challenge_11(){
 
     let text = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";// repeating key to guess encryption 
@@ -282,7 +276,6 @@ fn set_2_challenge_11(){
     let encripted_text = encrypt_random(&cleartext);
     let mut groups: Vec<Vec<u8>> = vec![Vec::new(); encripted_text.len()/16];
     let mut distance;
-    let mut nb_of_repeated_block :i32;
     let mut hamming;
 
 
@@ -306,7 +299,8 @@ fn set_2_challenge_11(){
 
 }
 //#[test]
-fn set_2_challenge_12(){ //this takes somewhat long maybe optimise i think some copy are necessary
+#[allow(dead_code)]
+fn set_2_challenge_12(){ //this takes somewhat long maybe optimise I think some copy are necessary
 
     let mut buffer_guess_vec: [u8; 16] = *b"AAAAAAAAAAAAAAAA";
     let buffer_padding = "AAAAAAAAAAAAAAAA"   ;
@@ -351,7 +345,7 @@ assert_eq!(result,expected);
 
 
 }
-
+#[allow(dead_code)]
 fn set_2_challenge_14(){
     //seem uninteresting just see how many byte short of 16 the attacking message is 
     // can be interesting if length of prepend is variable 
@@ -360,13 +354,13 @@ fn set_2_challenge_14(){
 fn set_3_challenge_15(){
 
     let text = b"ICE ICE BABY\x04\x04\x04\x04";
-    let text2_vec=remove_padding(text);
-    assert_eq!(vec_to_ascii(&text2_vec),"ICE ICE BABY");
+    let _text2_vec=remove_padding(text);
+    assert_eq!(vec_to_ascii(&_text2_vec),"ICE ICE BABY");
     
     let text = b"ICE ICE BABY\x05\x05\x05\x05";
 
     let result = catch_unwind(|| {
-        let text2_vec=remove_padding(text);
+        let _text2_vec=remove_padding(text);
     });
 
     assert!(result.is_err());
@@ -374,7 +368,7 @@ fn set_3_challenge_15(){
     let text = b"ICE ICE BABY\x01\x02\x03\x04";
 
     let result = catch_unwind(|| {
-        let text2_vec=remove_padding(text);
+        let _text2_vec=remove_padding(text);
     });
 
     assert!(result.is_err());
@@ -392,7 +386,7 @@ fn set_3_challenge_16(){
     let sanitised_user_input = encode(user_input);
     let sanitised_user_input_vec = ascii_to_vec(&sanitised_user_input);
     let cleartext = combine_3_vec(prepend,&sanitised_user_input_vec,append);
-    let mut cyphertext = CBC_encrypt(&random_aes_key,&pad_to_block_size(&cleartext,16),&iv);
+    let mut cyphertext = cbc_encrypt(&random_aes_key,&pad_to_block_size(&cleartext,16),&iv);
     println!("{}",vec_to_ascii(&cyphertext));
     
     let wanted_inject =   b";admin=true;";
@@ -407,7 +401,7 @@ fn set_3_challenge_16(){
         cyphertext[start_index + i] ^= result_vec[i];
     }
     
-    let decripted = CBC_decrypt(&random_aes_key,&cyphertext,&iv);
+    let decripted = cbc_decrypt(&random_aes_key,&cyphertext,&iv);
     let is_admin = is_admin_tuple(&vec_to_ascii(&decripted));
     assert_eq!(true,is_admin)
 
@@ -441,13 +435,13 @@ fn set_3_challenge_18(){
 
     assert_eq!(origin,message)
 }
-
+#[allow(dead_code)]
 fn set_3_challenge_19(){// this is good enough ,scoring function is bad but whatever good POC 
 
     //a second pass technique would also be interesting ,like a valid word flag for each byte 
     //apparently i did the smart solution of problem 20 OH WELL
     //(also i padded instead of cutting whatever)
-
+    //human review needed no automatic testing 
     let messages = read_file_lines("criptopal_challenge_19.txt");
     let key = *b"YELLOW_SUBMARINE";
 
@@ -486,6 +480,7 @@ fn set_3_challenge_19(){// this is good enough ,scoring function is bad but what
 
 
 }
+#[allow(dead_code)]
 fn set_3_challenge_22(){
 
     let random;
@@ -510,13 +505,12 @@ fn set_3_challenge_22(){
 #[test]
 fn set_3_challenge_23(){
 
-
     let seed = 5489; // any seed
     let mut original = Mt19937::new(seed);
 
     let mut clone = clone_mt19937(&mut original);
 
-    for i in 0..1000 {
+    for _i in 0..1000 {
         assert_eq!(original.next_u32(), clone.next_u32());
     }
 
@@ -525,6 +519,7 @@ fn set_3_challenge_23(){
 }
 
 //#[test]
+#[allow(dead_code)]
 fn set_3_challenge_24(){
     let message = b"hvcasdvbadcjvbaschnaoAAAAAAAAAAAA";//random +32 A //53length 1 = 4 bit 
     let key = SystemTime::now()
@@ -533,7 +528,7 @@ fn set_3_challenge_24(){
     .as_secs();
 
 
-    let cypher = MT19937_construct(key.try_into().unwrap(),message);
+    let cypher = mt19937_construct(key.try_into().unwrap(),message);
     println!("{}",vec_to_ascii(&cypher));
 
     let len = cypher.len();
@@ -548,8 +543,7 @@ fn set_3_challenge_24(){
     .as_secs();
 
 
-    let mut tested_seed =0;
-    let mut found = false;
+    let mut tested_seed;
     while !found {
         let mut rng = Mt19937::new(current_time.try_into().unwrap());
 
@@ -568,7 +562,7 @@ fn set_3_challenge_24(){
 
 
 
-    let decripted = MT19937_construct(current_time.try_into().unwrap(),&cypher);
+    let decripted = mt19937_construct(current_time.try_into().unwrap(),&cypher);
     assert_eq!(vec_to_ascii(&decripted),vec_to_ascii(message));
 
 }
@@ -605,7 +599,7 @@ fn edit_atacker(ciphertext: &[u8],key: [u8;16], offset: usize, newtext: &[u8]) -
     cleartext.splice(offset..offset, newtext.iter().cloned());
 
 
-    // Re-encrypt the modified cleartext
+    // Re-encrypt the modified cleartext    let mut nb_of_repeated_block :i32;
     let re_encrypted = ctr_construct(key, &cleartext);
     re_encrypted
 }
@@ -614,7 +608,6 @@ fn edit_atacker(ciphertext: &[u8],key: [u8;16], offset: usize, newtext: &[u8]) -
 fn set_4_challenge_26(){
 
     let random_aes_key = generate_random_key();
-    let iv = generate_random_key();
     let prepend = b"comment1=cooking%20MCs;userdata=";
     let append = b";comment2=%20like%20a%20pound%20of%20bacon";
     let user_input ="whatever12345678";//16 byte
@@ -646,7 +639,7 @@ fn set_4_challenge_26(){
 
 
 fn check_for_error(encrypted: &[u8], key: &[u8]) -> Result<bool, Vec<u8>> {
-    let message = CBC_decrypt(key, encrypted, key); 
+    let message = cbc_decrypt(key, encrypted, key); 
     if message.iter().any(|&b| b > 127) {
         Err(message)
     } else {
@@ -668,7 +661,7 @@ fn set_4_challenge_27(){
     let sanitised_user_input = encode(user_input);
     let sanitised_user_input_vec = ascii_to_vec(&sanitised_user_input);
     let cleartext = combine_3_vec(prepend,&sanitised_user_input_vec,append);
-    let mut cyphertext = CBC_encrypt(&random_aes_key,&pad_to_block_size(&cleartext,16),&iv);
+    let cyphertext = cbc_encrypt(&random_aes_key,&pad_to_block_size(&cleartext,16),&iv);
     //finish client 
     let first_block = &cyphertext[..16];
     let empty_vec = vec![0u8; 16];
@@ -776,7 +769,7 @@ fn set_4_challenge_29(){
 //
     //assert_eq!(padded2.digest().bytes(),sha1_state.digest().bytes())
 //}
-
+#[allow(dead_code)]
 fn digest_md4_to_state(digest: &[u8; 16]) -> [u32; 4] {
     let mut state = [0u32; 4];
     for (i, chunk) in digest.chunks(4).enumerate() {
@@ -847,6 +840,8 @@ fffffffffffff";
     println!("Shared secret s2 = {}", s2);
     assert_eq!(s, s2);  // They should be equal
 }
+
+#[allow(dead_code)]
 fn set_5_challenge_33(){
 let hex_string = "\
 ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024\
@@ -860,12 +855,12 @@ fffffffffffff";
 
     let p = BigUint::parse_bytes(hex_string.as_bytes(), 16).unwrap();
     let g = 5u32.to_biguint().unwrap();
-    let mut M = Participant::new(&p, &g);
+    let mut M: Participant = Participant::new(&p, &g);
     M.set_shared_key(0.to_biguint().unwrap());
 
     // Create participants A and B
     let mut A = Participant::new(&p, &g);
-    let (p_sent, g_sent, A_pub_sent) = A.export_public();
+    let (p_sent, g_sent, _a_pub_sent) = A.export_public();
 
     // A "sends" p, g, A_pub to B
     println!("--- A sends p, g, A_pub ---");
@@ -876,37 +871,37 @@ fffffffffffff";
     B.receive_public(p_sent.clone(), g_sent.clone(), p_sent.clone());
 
     // B sends its public key to A
-    let B_pub_sent = B.export_public_key();
+    let b_pub_sent = B.export_public_key();
     println!("--- B sends B_pub ---");
 
     // A receives M false key
     A.receive_public_key(p_sent.clone());
 
     // A sends message to B
-    let message_from_A = b"hello world";
-    println!("A sends: {}", vec_to_ascii(message_from_A));
-    let encrypted_A = A.encrypt_message(message_from_A);
+    let message_from_a = b"hello world";
+    println!("A sends: {}", vec_to_ascii(message_from_a));
+    let encrypted_a = A.encrypt_message(message_from_a);
 
-    println!("attacker saw : {}",vec_to_ascii(&M.decrypt_message(&encrypted_A)));
+    println!("attacker saw : {}",vec_to_ascii(&M.decrypt_message(&encrypted_a)));
 
     // B receives message from A
-    let decrypted_A = B.decrypt_message(&encrypted_A);
-    println!("B received: {}", vec_to_ascii(&decrypted_A));
+    let decrypted_a = B.decrypt_message(&encrypted_a);
+    println!("B received: {}", vec_to_ascii(&decrypted_a));
 
     // B sends reply to A
-    let message_from_B = b"world answer";
-    println!("B sends: {}", vec_to_ascii(message_from_B));
-    let encrypted_B = B.encrypt_message(message_from_B);
+    let message_from_b = b"world answer";
+    println!("B sends: {}", vec_to_ascii(message_from_b));
+    let encrypted_b = B.encrypt_message(message_from_b);
 
 
-    println!("attacker saw : {}",vec_to_ascii(&M.decrypt_message(&encrypted_B)));
+    println!("attacker saw : {}",vec_to_ascii(&M.decrypt_message(&encrypted_b)));
     // A receives message from B
-    let decrypted_B = A.decrypt_message(&encrypted_B);
-    println!("A received: {}", vec_to_ascii(&decrypted_B));
+    let decrypted_b = A.decrypt_message(&encrypted_b);
+    println!("A received: {}", vec_to_ascii(&decrypted_b));
 }
 
 
-
+#[allow(dead_code)]
 fn set_5_challenge_34(){
 
     let hex_string = "\
@@ -930,7 +925,7 @@ fffffffffffff";
     //g = p - 1 // key become 1
     // Create participants A and B
     let mut A = Participant::new(&p, &g);
-    let (p_sent, g_sent, A_pub_sent) = A.export_public();
+    let (p_sent, g_sent, a_pub_sent) = A.export_public();
 
     // A "sends" p, g, A_pub to B
     println!("--- A sends p, g, A_pub ---");
@@ -939,36 +934,36 @@ fffffffffffff";
     // B receives p, g, and M false key
     let mut B = Participant::new(&p_sent, &g_sent);
 
-    B.receive_public(p_sent.clone(), g_sent.clone(),A_pub_sent);
+    B.receive_public(p_sent.clone(), g_sent.clone(),a_pub_sent);
 
     // B sends its public key to A
-    let B_pub_sent = B.export_public_key();
+    let b_pub_sent = B.export_public_key();
     println!("--- B sends B_pub ---");
 
 
-    A.receive_public_key(B_pub_sent);
+    A.receive_public_key(b_pub_sent);
 
     // A sends message to B
-    let message_from_A = b"hello world let it be";
-    println!("A sends: {}", vec_to_ascii(message_from_A));
-    let encrypted_A = A.encrypt_message(message_from_A);
+    let message_from_a = b"hello world let it be";
+    println!("A sends: {}", vec_to_ascii(message_from_a));
+    let encrypted_a = A.encrypt_message(message_from_a);
 
-    println!("attacker saw : {}",vec_to_ascii(&M.decrypt_message(&encrypted_A)));
+    println!("attacker saw : {}",vec_to_ascii(&M.decrypt_message(&encrypted_a)));
 
     // B receives message from A
-    let decrypted_A = B.decrypt_message(&encrypted_A);
-    println!("B received: {}", vec_to_ascii(&decrypted_A));
+    let decrypted_a = B.decrypt_message(&encrypted_a);
+    println!("B received: {}", vec_to_ascii(&decrypted_a));
 
     // B sends reply to A
-    let message_from_B = b"world answer";
-    println!("B sends: {}", vec_to_ascii(message_from_B));
-    let encrypted_B = B.encrypt_message(message_from_B);
+    let message_from_b = b"world answer";
+    println!("B sends: {}", vec_to_ascii(message_from_b));
+    let encrypted_b = B.encrypt_message(message_from_b);
 
 
-    println!("attacker saw : {}",vec_to_ascii(&M.decrypt_message(&encrypted_B)));
+    println!("attacker saw : {}",vec_to_ascii(&M.decrypt_message(&encrypted_b)));
     // A receives message from B
-    let decrypted_B = A.decrypt_message(&encrypted_B);
-    println!("A received: {}", vec_to_ascii(&decrypted_B));
+    let decrypted_b = A.decrypt_message(&encrypted_b);
+    println!("A received: {}", vec_to_ascii(&decrypted_b));
 }
 
 
@@ -990,38 +985,38 @@ fffffffffffff";
     let k = 3.to_biguint().unwrap();
     let email = b"something_original@thing";
     let password =b"YELLOW_SUBMARINE";
-    let input = b"hello";
 
 
-    let mut S = secure_remote_password::new(n.clone(),g.clone(),k.clone(),email,password);
+    let mut S = SecureRemotePassword::new(n.clone(),g.clone(),k.clone(),email,password);
     S.generate_hash();
 
 
 
-    let mut C = secure_remote_password::new(n.clone(),g.clone(),k.clone(),email,password);
+    let mut C = SecureRemotePassword::new(n.clone(),g.clone(),k.clone(),email,password);
 
     C.generate_client_key();
-    let (email,public_key_C) = C.send_auth_client();
+    let (_email,public_key_c) = C.send_auth_client();
     // C.set_public_key (BigUint::one());
     // c sends I and public_key 
 
     S.generate_public_key();
-    let (salt,public_key_S) = S.send_auth_server();
+    let (salt,public_key_s) = S.send_auth_server();
 
 
 
 
 
-    S.generate_public_shared_key(public_key_S.clone(),public_key_C.clone());
-    C.generate_public_shared_key(public_key_S.clone(),public_key_C.clone());
+    S.generate_public_shared_key(public_key_s.clone(),public_key_c.clone());
+    C.generate_public_shared_key(public_key_s.clone(),public_key_c.clone());
 
-    let output1 = C.generate_shared_private_key_client(salt , public_key_S);
-    let output2 = S.generate_shared_private_key_server(public_key_C);
+    let output1 = C.generate_shared_private_key_client(salt , public_key_s);
+    let output2 = S.generate_shared_private_key_server(public_key_c);
     println!("{:?} \n{:?}",output1,output2);
 
     assert_eq!(output1,output2);
 }
 
+#[allow(dead_code)]
 fn set_5_challenge_37(){
 
     let hex_string = "\
@@ -1039,31 +1034,31 @@ fffffffffffff";
     let k = 3.to_biguint().unwrap();
     let email = b"something_original@thing";
     let password =b"YELLOW_SUBMARINE";
-    let input = b"hello";
 
 
-    let mut S = secure_remote_password::new(n.clone(),g.clone(),k.clone(),email,password);
+    let mut S = SecureRemotePassword::new(n.clone(),g.clone(),k.clone(),email,password);
     S.generate_hash();
 
 
 
-    let mut C = secure_remote_password::new(n.clone(),g.clone(),k.clone(),email,password);
+    let mut C = SecureRemotePassword::new(n.clone(),g.clone(),k.clone(),email,password);
 
     C.generate_client_key();
-    let (email,mut public_key_C) = C.send_auth_client();
+    let (_email,_public_key_c) = C.send_auth_client();
+    
     C.set_public_key (BigUint::zero());
-    let (email,mut public_key_C) = C.send_auth_client();
+    let (_email,public_key_c) = C.send_auth_client();
     // c sends I and public_key 
 
     S.generate_public_key();
-    let (salt,public_key_S) = S.send_auth_server();
+    let (_salt,public_key_s) = S.send_auth_server();
 
 
-    S.generate_public_shared_key(public_key_S.clone(),public_key_C.clone());
-    C.generate_public_shared_key(public_key_S.clone(),public_key_C.clone());
+    S.generate_public_shared_key(public_key_s.clone(),public_key_c.clone());
+    C.generate_public_shared_key(public_key_s.clone(),public_key_c.clone());
 
     let output1 =sha256::digest(BigUint::zero().to_bytes_be());
-    let output2 = S.generate_shared_private_key_server(public_key_C);//083026d9af916f6cef9497f33a5f6652f5c62bc53c5780b6e675579a003896cc
+    let output2 = S.generate_shared_private_key_server(public_key_c);//083026d9af916f6cef9497f33a5f6652f5c62bc53c5780b6e675579a003896cc
     println!("{:?} \n{:?}",output1,output2);
 
     assert_eq!(ascii_to_vec(&output1),output2);
@@ -1089,11 +1084,11 @@ fn set_5_challenge_39() {
 
 #[test]
 fn set_5_challenge_40() {
-    let (public_key, private_key) = generate_keypair(128);
+    let (public_key, _private_key) = generate_keypair(128);
     let (e1, n1) = public_key;
-    let (public_key, private_key) = generate_keypair(128);
+    let (public_key, _private_key) = generate_keypair(128);
     let (e2, n2) = public_key;
-    let (public_key, private_key) = generate_keypair(128);
+    let (public_key, _private_key) = generate_keypair(128);
     let (e3, n3) = public_key;
 
     let message = b"I love javascrip";
@@ -1114,6 +1109,7 @@ fn set_5_challenge_40() {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn set_6_challenge_41() {
 
     let text = b"{
@@ -1126,7 +1122,7 @@ fn set_6_challenge_41() {
     let (p ,_) = private_key;
     
     let mut rng = thread_rng();
-    let S = rng.gen_bigint(200).abs() % n.clone() ;//stupid i know but it's for the principle  
+    let S: num::BigInt = rng.gen_bigint(200).abs() % n.clone() ;//stupid i know but it's for the principle  
     
     
     let ciphertext = rsa_encrypt(text,&e,&n);
@@ -1141,30 +1137,28 @@ fn set_6_challenge_41() {
     }
     
     
-
+#[allow(dead_code)]
 fn set_6_challenge42() { // this is unfinished need to find a better way of doing the bruteforce attack on the padding 
 
     // this is actually the implementation of another type of attack but it is way worste 
     let text = b"useless information";
-    let (public_key, private_key) = generate_keypair(512);
+    let (public_key, _private_key) = generate_keypair(512);
     let (e, n) = public_key;
-    let (p ,_) = private_key;
 
 
     let byte_length = n.to_bytes_be().1.len();
     println!("n is {} bytes long", byte_length);
 
-    let padding_len = byte_length - 3 - text.len();
+    let _padding_len = byte_length - 3 - text.len();
 
 
     let ps_len = 4;
     let forged_text =b"hello_mom; it is nice to meet you please ignore the rest of this message it is really important ";
-    let total = 1u128 << (8 * ps_len);
 
 
     // p0 is the trailing zeros to fill the block
     let mut p0 = vec![0x00; byte_length - 3 - ps_len - forged_text.len()];
-    let mut ps = vec![0x00; 4];
+    let  ps = vec![0x00; 4];
     let mut forged = Vec::new();
     forged.push(0x00);
     forged.push(0x02);

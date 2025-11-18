@@ -1,6 +1,6 @@
 use base64::{engine::general_purpose, Engine};
 use hex;
-use std::panic::{catch_unwind, set_hook};
+use std::panic::{catch_unwind};
 use std::fs;
 use aes::Aes128;
 use block_modes::{BlockMode, Ecb};
@@ -20,7 +20,7 @@ use std::thread;
 pub mod challenge13;
 pub mod rng;
 use crate::rng::Mt19937;
-use crate::rng::reverseMt19937;
+use crate::rng::ReverseMt19937;
 use crate::rng::untemper;
 pub mod sha1;
 use crate::sha1::Sha1;
@@ -29,7 +29,7 @@ use num_traits::{Zero, One,ToBytes,ToPrimitive};
 use hmac::{Hmac, Mac};
 use sha2::{Sha256,Digest};
 use num_bigint::{BigInt,BigUint, RandBigInt, ToBigUint,ToBigInt};
-use std::ops::{Shr, Add, Sub, Mul,Rem};
+use std::ops::{Shr, Rem};
 
 use num_primes::Generator;
 
@@ -211,7 +211,7 @@ pub fn find_keysize(input_vec: &[u8]) -> usize{
 
 
 
-pub fn Vigenere(input_vec: &[u8],key_length:usize)-> Vec<u8> {
+pub fn vigenere(input_vec: &[u8],key_length:usize)-> Vec<u8> {
 
     let mut groups: Vec<Vec<u8>> = vec![Vec::new(); key_length];
     let mut results: Vec<Vec<u8>> = vec![Vec::new(); key_length];
@@ -266,7 +266,7 @@ pub fn aes_ecb_decrypt(key: &[u8], ciphertext: &[u8]) -> Vec<u8> {
 
 
 
-pub fn CBC_encrypt_block(block_to_encrypt:&[u8],previous_block:&[u8],key:&[u8]) -> Vec<u8>{
+pub fn cbc_encrypt_block(block_to_encrypt:&[u8],previous_block:&[u8],key:&[u8]) -> Vec<u8>{
 
     let cyphertext = xor_two(block_to_encrypt,previous_block);
     let result = aes_ecb_encrypt(key,&cyphertext);
@@ -274,7 +274,7 @@ pub fn CBC_encrypt_block(block_to_encrypt:&[u8],previous_block:&[u8],key:&[u8]) 
 }
 
 
-pub fn CBC_encrypt(key: &[u8],vec_to_encrypt:&[u8],iv:&[u8]) -> Vec<u8>{
+pub fn cbc_encrypt(key: &[u8],vec_to_encrypt:&[u8],iv:&[u8]) -> Vec<u8>{
 
 
     let length = vec_to_encrypt.len();
@@ -298,18 +298,18 @@ pub fn CBC_encrypt(key: &[u8],vec_to_encrypt:&[u8],iv:&[u8]) -> Vec<u8>{
         .chunks(16)
         .map(|chunk| chunk.to_vec())  // convert &[u8] slice to Vec<u8>
         .collect();
-    input_block.insert(0, iv.clone().to_vec());
+    input_block.insert(0, iv.to_vec());
     output_block.insert(0,iv.to_vec());
 
     for i in 0..= nb_block-1{
-        output_block[i+1]=CBC_encrypt_block(&input_block[i+1],&output_block[i],&key);
+        output_block[i+1]=cbc_encrypt_block(&input_block[i+1],&output_block[i],&key);
     }
 
     output_vec = output_block.iter().skip(1).flatten().copied().collect();
     output_vec
 
 }
-pub fn CBC_decrypt(key: &[u8],vec_to_encrypt:&[u8],iv:&[u8]) -> Vec<u8>{
+pub fn cbc_decrypt(key: &[u8],vec_to_encrypt:&[u8],iv:&[u8]) -> Vec<u8>{
 
 
     let length = vec_to_encrypt.len();
@@ -333,11 +333,11 @@ pub fn CBC_decrypt(key: &[u8],vec_to_encrypt:&[u8],iv:&[u8]) -> Vec<u8>{
         .chunks(16)
         .map(|chunk| chunk.to_vec()) 
         .collect();
-    input_block.insert(0, iv.clone().to_vec());
+    input_block.insert(0, iv.to_vec());
     output_block.insert(0,iv.to_vec());
 
     for i in 0..= nb_block-1{
-        output_block[i+1]=CBC_decrypt_block(&input_block[i+1],&input_block[i],&key);
+        output_block[i+1]=cbc_decrypt_block(&input_block[i+1],&input_block[i],&key);
     }
 
     output_vec = output_block.iter().skip(1).flatten().copied().collect();
@@ -347,7 +347,7 @@ pub fn CBC_decrypt(key: &[u8],vec_to_encrypt:&[u8],iv:&[u8]) -> Vec<u8>{
 
 
 
-pub fn CBC_decrypt_block( block_to_decrypt: &[u8], previous_block: &[u8],key:&[u8]) -> Vec<u8> {
+pub fn cbc_decrypt_block( block_to_decrypt: &[u8], previous_block: &[u8],key:&[u8]) -> Vec<u8> {
 
     let decrypted = aes_ecb_decrypt(&key, &block_to_decrypt);
     let result = xor_two(&decrypted, &previous_block);
@@ -401,10 +401,10 @@ pub fn encrypt_random(entry:&[u8])-> Vec<u8>{
     let padded = pad_to_block_size(&padding_preandpost(entry,nb_append_before,nb_append_after,0x04),16);
 
     let encrypted;
-    if (rng.gen::<bool>()){
+    if rng.r#gen::<bool>(){
         encrypted = aes_ecb_encrypt(&key,&padded);
     }else{
-        encrypted = CBC_encrypt(&key,&padded,&iv);
+        encrypted = cbc_encrypt(&key,&padded,&iv);
     }
     encrypted
 }
@@ -443,7 +443,6 @@ pub fn detect_repeating(entry: &[u8])-> i32{ // take a ciphered text tells if th
 
     let mut groups: Vec<Vec<u8>> = vec![Vec::new(); entry.len()/16];
 
-    let mut nb_of_repeated_block :i32;
     let mut hamming;
 
 
@@ -477,7 +476,7 @@ pub fn iterate_byte_possibilities_inline(
 }
 
 
-pub fn shift_left_and_append(mut arr: &mut [u8; 16], new_byte: u8) {
+pub fn shift_left_and_append(arr: &mut [u8; 16], new_byte: u8) {
     for i in 0..(arr.len() - 1) {
         arr[i] = arr[i + 1];
     }
@@ -633,8 +632,7 @@ pub fn client()-> (Vec<u8>, [u8;16]){
     ];
 
     // Pick one at random
-    let mut rng = thread_rng();
-    let idx = rng.gen_range(0..=options.len()-1);
+
     let plaintext = convert_hexa_to_vec(&convert_base64_to_hexstring(options[2]));// set as fixed for test
 
     let iv = b"YELLOW_SUBMARINE";
@@ -642,7 +640,7 @@ pub fn client()-> (Vec<u8>, [u8;16]){
     let key = b"YELLOW_SUBMARINE";//original i know the attacker doen't know it 
 
 
-    let cipher = CBC_encrypt(key,&pad_to_block_size(&plaintext,16),iv);
+    let cipher = cbc_encrypt(key,&pad_to_block_size(&plaintext,16),iv);
 
     (cipher, *iv)
 
@@ -651,7 +649,7 @@ pub fn client()-> (Vec<u8>, [u8;16]){
 pub fn oracle(ciphertext : &[u8],iv:&[u8])-> bool{
 
     let key = b"YELLOW_SUBMARINE";//original i know the attacker doen't know it 
-    let plaintext = CBC_decrypt(key,&ciphertext,iv);
+    let plaintext = cbc_decrypt(key,&ciphertext,iv);
     let result = catch_unwind(|| {
         let _text2_vec=remove_padding(&plaintext);
     });
@@ -746,7 +744,7 @@ pub fn generate_random()-> u32{
     rng.next_u32()
 }
 
-pub fn clone_mt19937(original: &mut Mt19937) -> reverseMt19937 {
+pub fn clone_mt19937(original: &mut Mt19937) -> ReverseMt19937 {
     const N: usize = 256;
     let mut state = [0u32; N];
     for i in 0..N {
@@ -754,7 +752,7 @@ pub fn clone_mt19937(original: &mut Mt19937) -> reverseMt19937 {
         state[i] = untemper(output);
     }
 
-    reverseMt19937::from_state(state)
+    ReverseMt19937::from_state(state)
 }
 
 pub fn last_full_u32(data: &[u8]) -> &[u8] {
@@ -764,8 +762,7 @@ pub fn last_full_u32(data: &[u8]) -> &[u8] {
     slice
 }
 
-pub fn MT19937_construct(key:u32,message:&[u8]) -> Vec<u8>{
-    let nonce =[0;8] ;
+pub fn mt19937_construct(key:u32,message:&[u8]) -> Vec<u8>{
     let mut rng = Mt19937::new(key);
     let keystream = generate_keystream_mt(&mut rng,message.len());// one result = 4 byte 
     let output = xor_two(&keystream, &message);
@@ -914,7 +911,7 @@ pub fn encrypt_message(&self, message: &[u8]) -> Vec<u8> {
     let mut sha = Sha1::new();
     sha.update(&s.to_bytes_be());
     let key = sha.digest().bytes();
-    let ciphertext = CBC_encrypt(&key[0..16], &pad_to_block_size(message, 16), &iv);
+    let ciphertext = cbc_encrypt(&key[0..16], &pad_to_block_size(message, 16), &iv);
 
     let mut encrypted = Vec::with_capacity(ciphertext.len() + iv.len());
     encrypted.extend_from_slice(&ciphertext);
@@ -933,7 +930,7 @@ pub fn decrypt_message(&self, encrypted: &[u8]) -> Vec<u8> {
     let mut sha = Sha1::new();
     sha.update(&s.to_bytes_be());
     let key = sha.digest().bytes();
-    let decrypted = CBC_decrypt(&key[0..16], ciphertext, iv);
+    let decrypted = cbc_decrypt(&key[0..16], ciphertext, iv);
     remove_padding(&decrypted)
 }
 
@@ -949,7 +946,7 @@ pub fn message_decrypting(s:&BigUint,message:&[u8]) ->Vec<u8>{
     sha.update(&s.to_bytes_be());
     
     let key =sha.digest().bytes();
-    let decrypted = CBC_decrypt(&key[0..16],&ciphertext,&iv );
+    let decrypted = cbc_decrypt(&key[0..16],&ciphertext,&iv );
     
 
     
@@ -959,7 +956,7 @@ pub fn message_decrypting(s:&BigUint,message:&[u8]) ->Vec<u8>{
 
 
 
-pub struct secure_remote_password { // implementation of SRP 
+pub struct SecureRemotePassword { // implementation of SRP 
     email:Vec<u8>,
     password:Vec<u8>,
     nist_prime: BigUint,
@@ -972,7 +969,7 @@ pub struct secure_remote_password { // implementation of SRP
     n: u32,//salt
 }
 
-impl secure_remote_password {
+impl SecureRemotePassword {
     pub fn new(n:BigUint ,g: BigUint, k: BigUint,email :&[u8],password:&[u8]) -> Self {
         Self {
             nist_prime:n ,
@@ -991,14 +988,14 @@ impl secure_remote_password {
 
         let mut rng = rand::thread_rng();
         // Generate a random integer between 1 and 100 (inclusive)
-        let n: u32 = rng.gen();
+        let n: u32 = rng.r#gen();
         let n_bytes = n.to_be_bytes();
         let mut combined = Vec::with_capacity(4 + self.password.len());
         combined.extend_from_slice(&n_bytes);
         combined.extend_from_slice(&self.password);
 
-        let xH = sha256::digest(combined);
-        let x = BigUint::parse_bytes(xH.as_bytes(), 16).unwrap();
+        let x_h = sha256::digest(combined);
+        let x = BigUint::parse_bytes(x_h.as_bytes(), 16).unwrap();
         self.hash = modular_exponentiation(&self.g,&x,&self.nist_prime);
         self.n = n 
     }
@@ -1023,8 +1020,8 @@ impl secure_remote_password {
         combined.extend_from_slice(&key_2_bytes);
         combined.extend_from_slice(&public_key_bytes);
         
-        let uH = sha256::digest(combined);
-        let u = BigUint::parse_bytes(uH.as_bytes(), 16).unwrap();
+        let u_h = sha256::digest(combined);
+        let u = BigUint::parse_bytes(u_h.as_bytes(), 16).unwrap();
         self.common_key = u
     }
 
@@ -1042,8 +1039,8 @@ impl secure_remote_password {
         combined.extend_from_slice(&n_bytes);
         combined.extend_from_slice(&self.password);
 
-        let xH = sha256::digest(combined);
-        let x = BigUint::parse_bytes(xH.as_bytes(), 16).unwrap();
+        let x_h = sha256::digest(combined);
+        let x = BigUint::parse_bytes(x_h.as_bytes(), 16).unwrap();
         
         let shared_private_key = modular_exponentiation( &(key_server - self.k.clone() * self.g.modpow(&x,&self.nist_prime)), &(self.private_key.clone() + self.common_key.clone()*x), &self.nist_prime);
         
@@ -1053,6 +1050,7 @@ impl secure_remote_password {
         validator
         //Generate S = (B - k * g**x)**(a + u * x) % N
     }
+    
     pub fn generate_shared_private_key_server(&self,key_client:BigUint) -> Vec<u8>{
         //S = (A * v**u) ** b % N
     
@@ -1175,10 +1173,10 @@ pub fn rsa_decrypt(ciphertext: &BigInt, d: &BigInt, n: &BigInt) -> BigUint {
 
 pub fn mul_inv(mut a:BigInt,mut b:BigInt)-> BigInt{//((a *x)%m =1)
 
-    let mut b0 = b.clone();
+    let  b0 = b.clone();
     let mut x0 = BigInt::zero() ;let mut x1=BigInt::one();
-    while(a>BigInt::one()){
-        let mut q = a.clone() / b.clone();
+    while a>BigInt::one(){
+        let  q = a.clone() / b.clone();
         let mut  t =b.clone();
         b = a % b;
         a = t;
@@ -1186,7 +1184,7 @@ pub fn mul_inv(mut a:BigInt,mut b:BigInt)-> BigInt{//((a *x)%m =1)
         x0 =x1 -(q *x0); 
         x1 = t ;
     }
-    if(x1 < BigInt::zero()){ x1 += b0;}
+    if x1 < BigInt::zero(){ x1 += b0;}
     x1
 }
 

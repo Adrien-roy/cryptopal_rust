@@ -1,11 +1,10 @@
-
-
-
-const word_size :u32= 32; //w
-const degree_of_recurence :usize = 256; //n 
-const middle_word :usize = 57; //m 
-const lower_bitmask_size :u32 =1; //r
-const coefficient :u32 =0x9908b0df ; //a 
+#[allow(dead_code)]
+const WORD_SIZE :u32= 32; //w
+const DEGREE_OF_RECURENCE :usize = 256; //n 
+const MIDDLE_WORD :usize = 57; //m 
+#[allow(dead_code)]
+const LOWER_BITMASK_SIZE :u32 =1; //r
+const COEFFICIENT :u32 =0x9908b0df ; //a 
 const U :u32 =11;
 const S :u32 =7;
 const T :u32 =15;
@@ -17,15 +16,15 @@ const LOWER_MASK: u32 = 0x7FFFFFFF; // lowest w-r bits
 const UPPER_MASK: u32 = 0x80000000; // highest r bits
 
 pub struct Mt19937 {
-    mt: [u32; degree_of_recurence],
+    mt: [u32; DEGREE_OF_RECURENCE],
     index: usize,
 }
 
 impl Mt19937 {
     pub fn new(seed: u32) -> Self {
-        let mut mt = [0u32; degree_of_recurence];
+        let mut mt = [0u32; DEGREE_OF_RECURENCE];
         mt[0] = seed;
-        for i in 1..degree_of_recurence {
+        for i in 1..DEGREE_OF_RECURENCE {
             mt[i] = F
                 .wrapping_mul(mt[i - 1] ^ (mt[i - 1] >> 30))
                 .wrapping_add(i as u32);
@@ -44,36 +43,36 @@ impl Mt19937 {
         y ^= (y << T) & C;
         y ^= y >> L;
 
-        self.index = (self.index + 1) % degree_of_recurence;
+        self.index = (self.index + 1) % DEGREE_OF_RECURENCE;
         y
     }
 
     fn twist(&mut self) {
-        for i in 0..degree_of_recurence {
-            let x = (self.mt[i] & UPPER_MASK) + (self.mt[(i + 1) % degree_of_recurence] & LOWER_MASK);
+        for i in 0..DEGREE_OF_RECURENCE {
+            let x = (self.mt[i] & UPPER_MASK) + (self.mt[(i + 1) % DEGREE_OF_RECURENCE] & LOWER_MASK);
             let mut x_a = x >> 1;
             if x % 2 != 0 {
-                x_a ^= coefficient;
+                x_a ^= COEFFICIENT;
             }
-            self.mt[i] = self.mt[(i + middle_word) % degree_of_recurence] ^ x_a;
+            self.mt[i] = self.mt[(i + MIDDLE_WORD) % DEGREE_OF_RECURENCE] ^ x_a;
         }
     }
 }
 
 
-pub struct reverseMt19937{
-    mt: [u32; degree_of_recurence],
+pub struct ReverseMt19937{
+    mt: [u32; DEGREE_OF_RECURENCE],
     index: usize,
     last_output: u32,
 }
 
 
-impl reverseMt19937{
+impl ReverseMt19937{
 
     pub fn new(seed: u32) -> Self {
-        let mut mt = [0u32; degree_of_recurence];
+        let mut mt = [0u32; DEGREE_OF_RECURENCE];
         mt[0] = seed;
-        for i in 1..degree_of_recurence {
+        for i in 1..DEGREE_OF_RECURENCE {
             mt[i] = F
                 .wrapping_mul(mt[i - 1] ^ (mt[i - 1] >> 30))
                 .wrapping_add(i as u32);
@@ -94,7 +93,7 @@ impl reverseMt19937{
         y ^= y >> L;
 
 
-        self.index = (self.index + 1) % degree_of_recurence;
+        self.index = (self.index + 1) % DEGREE_OF_RECURENCE;
         self.last_output = y;
         y
     }
@@ -110,13 +109,13 @@ impl reverseMt19937{
     }
 
     fn twist(&mut self) {
-        for i in 0..degree_of_recurence {
-            let x = (self.mt[i] & UPPER_MASK) + (self.mt[(i + 1) % degree_of_recurence] & LOWER_MASK);
+        for i in 0..DEGREE_OF_RECURENCE {
+            let x = (self.mt[i] & UPPER_MASK) + (self.mt[(i + 1) % DEGREE_OF_RECURENCE] & LOWER_MASK);
             let mut x_a = x >> 1;
             if x % 2 != 0 {
-                x_a ^= coefficient;
+                x_a ^= COEFFICIENT;
             }
-            self.mt[i] = self.mt[(i + middle_word) % degree_of_recurence] ^ x_a;
+            self.mt[i] = self.mt[(i + MIDDLE_WORD) % DEGREE_OF_RECURENCE] ^ x_a;
         }
     }
 
@@ -135,7 +134,7 @@ pub fn untemper(mut y:u32)->u32{
     y
 }
 
-fn invert_right_shift_xor(mut y: u32, shift: u32) -> u32 {
+fn invert_right_shift_xor(y: u32, shift: u32) -> u32 {
     let mut result = y;
     let mut i = 1;
     while i * shift < 32 {

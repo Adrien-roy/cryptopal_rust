@@ -305,7 +305,7 @@ fn sha1rnds4c(abcd: u32x4, msg: u32x4) -> u32x4 {
     let mut e = 0u32;
 
     macro_rules! bool3ary_202 {
-        ($a:expr, $b:expr, $c:expr) => {
+        ($a:expr_2021, $b:expr_2021, $c:expr_2021) => {
             ($c ^ ($a & ($b ^ $c)))
         };
     } // Choose, MD5F, SHA1C
@@ -344,7 +344,7 @@ fn sha1rnds4p(abcd: u32x4, msg: u32x4) -> u32x4 {
     let mut e = 0u32;
 
     macro_rules! bool3ary_150 {
-        ($a:expr, $b:expr, $c:expr) => {
+        ($a:expr_2021, $b:expr_2021, $c:expr_2021) => {
             ($a ^ $b ^ $c)
         };
     } // Parity, XOR, MD5H, SHA1P
@@ -383,7 +383,7 @@ fn sha1rnds4m(abcd: u32x4, msg: u32x4) -> u32x4 {
     let mut e = 0u32;
 
     macro_rules! bool3ary_232 {
-        ($a:expr, $b:expr, $c:expr) => {
+        ($a:expr_2021, $b:expr_2021, $c:expr_2021) => {
             ($a & $b) ^ ($a & $c) ^ ($b & $c)
         };
     } // Majority, SHA1M
@@ -426,13 +426,13 @@ impl Sha1State {
                 | ((block[off] as u32) << 24);
         }
         macro_rules! schedule {
-            ($v0:expr, $v1:expr, $v2:expr, $v3:expr) => {
+            ($v0:expr_2021, $v1:expr_2021, $v2:expr_2021, $v3:expr_2021) => {
                 sha1msg2(sha1msg1($v0, $v1) ^ $v2, $v3)
             };
         }
 
         macro_rules! rounds4 {
-            ($h0:ident, $h1:ident, $wk:expr, $i:expr) => {
+            ($h0:ident, $h1:ident, $wk:expr_2021, $i:expr_2021) => {
                 sha1_digest_round_x4($h0, sha1_first_half($h1, $wk), $i)
             };
         }

@@ -42,7 +42,7 @@ fn main() {
     let q = BigUint::parse_bytes(q_hex.as_bytes(), 16).unwrap();
     let g = BigUint::parse_bytes(g_hex.as_bytes(), 16).unwrap();
     let p = BigUint::parse_bytes(p_hex.as_bytes(), 16).unwrap();
-    let mut x = BigUint::parse_bytes(x_hex.as_bytes(), 16).unwrap();
+    let x = BigUint::parse_bytes(x_hex.as_bytes(), 16).unwrap();
     
     let pubkey = BigUint::parse_bytes(pubkey_hex.as_bytes(), 16).unwrap();
     let mut k = modular_exponentiation(&g,&x ,&p);// k public key x private key 

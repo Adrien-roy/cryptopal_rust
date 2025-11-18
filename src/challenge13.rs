@@ -63,7 +63,7 @@ fn decode_user_profile(encrypted_vec : &[u8]) -> HashMap<String, String>{
 
     let key : [u8; 16] = *b"YELLOW_SUBMARINE";
     let profile_vec = aes_ecb_decrypt(&key,&encrypted_vec);
-    let profile_str = vec_to_ascii((&profile_vec));
+    let profile_str = vec_to_ascii(&profile_vec);
     
     parse_kv_string(&profile_str)
 }
