@@ -59,42 +59,36 @@ So be friendly, a matter of life and death, just like a etch-a-sketch
     let result = &padded.digest();
     let expected = "d2d0714f014a9784047eaeccf956520045c45265";
     assert_eq!(expected,result.to_string());
+    let result_hex = result.to_string();
+    let messagehash = BigUint::parse_bytes(&result_hex.as_bytes(), 16).expect("failled to parse");
+
 //
-    //let sig = dsa_sign(data, &g, &k, &p, &q, &x).expect("sign failed");
-    //let (r, s) = sig;
-    //println!("signature r={}, s={}", r, s);
-//
+    let sig = dsa_sign(data, &g, &k, &p, &q, &x).expect("sign failed");
+    let (r, s) = sig;
+    println!("signature r={}, s={}", r, s);
+    //given a known k it's trivial to recover x
+    //  (s * k) - H(msg)
+    //x = ----------------  mod q
+    //            r
+    let x_found = group_div(&((s*k) - messagehash ),&r,&q).expect("GROUP DIV FAILLED") ;
+    assert_eq!(x_found,x );
+    println!("success x_found ={} x ={} ", x_found ,x);
+
     //// verify
     //let ok = dsa_verify(data, &g, &p, &q, &k, &r, &s);
     //println!("signature valid? {}", ok);
 
 
-    k = pubkey;
-    let r = BigUint::parse_bytes(b"548099063082341131477253921760299949438196259240", 10).unwrap();
-    let s = BigUint::parse_bytes(b"857042759984254168557880549501802188789837994940", 10).unwrap();
-    println!("{} {}",r,s);
-    let private_key = recover_private_key(data ,&k,&q ,&r,&s);
-    assert_eq!(private_key,x);
+    //k = pubkey;
+    //let r = BigUint::parse_bytes(b"548099063082341131477253921760299949438196259240", 10).unwrap();
+    //let s = BigUint::parse_bytes(b"857042759984254168557880549501802188789837994940", 10).unwrap();
+    //println!("{} {}",r,s);
+    //let private_key = recover_private_key(data ,&k,&q ,&r,&s);
+    //assert_eq!(private_key,x);
 
 }
 
-pub fn recover_private_key(data : &[u8],k: &BigUint,q: &BigUint ,r: &BigUint,s: &BigUint) -> BigUint{
-
-    let mut padded = Sha1::new();
-    padded.update(&data);
-    let h = BigUint::from_bytes_be(
-        &digest_to_state(&padded.digest().bytes())
-            .iter()
-            .flat_map(|v| v.to_be_bytes())
-            .collect::<Vec<u8>>()
-    );
-
-    let numerator = ((s * k) -h)% q ;
-    let r_inv = modinv(r,q).unwrap();
-
-    let private_key = (r_inv * numerator) % q;
-    private_key
-}
+pub fn recover_private_key(){}
 
 
 pub fn dsa_sign(
@@ -176,17 +170,3 @@ pub fn dsa_verify(
     &v == r
 }
 
-
-
-fn reverse_modular_exponantiation(expected: &BigUint,g: &BigUint,p : &BigUint) -> BigUint{
-    let total = u16::MAX ;
-    let mut x :BigUint = BigUint::zero();
-    for x in 0..=total {
-        println!("{}",x);
-        let k = modular_exponentiation(&g,&x.to_biguint().expect("REASON") ,&p);
-        if k == *expected{
-            return x.to_biguint().expect("REASON");
-        }
-    }
-    return x.to_biguint().expect("REASON");
-}

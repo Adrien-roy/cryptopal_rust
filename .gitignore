@@ -1,3 +1,5 @@
 # VS Code settings
 .vscode/
 target/
+docs/
+site/
