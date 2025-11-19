@@ -245,9 +245,6 @@ pub fn zip_by_column(chunks: &[Vec<u8>]) -> Vec<u8> {
 
 
 
-//AES implementation shamellesly stolen online 
-
-// Type alias for AES-128 in ECB mode with PKCS7 padding
 
 
 pub fn aes_ecb_encrypt(key: &[u8], plaintext: &[u8]) -> Vec<u8> {
